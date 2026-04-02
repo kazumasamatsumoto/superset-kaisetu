@@ -31,6 +31,13 @@ Apache Supersetの解説リポジトリです。
 - 視覚的な図解
 - 読了時間: 約15分
 
+#### シリーズタイプ設定
+**[MIXED_CHART_SERIES_TYPE.md](./MIXED_CHART_SERIES_TYPE.md)**
+- Query AとQuery Bのグラフタイプ設定方法
+- 7種類のグラフタイプ（折れ線、棒グラフ、散布図など）
+- 設定の組み合わせ例
+- 読了時間: 約10分
+
 ---
 
 ## アーカイブ
