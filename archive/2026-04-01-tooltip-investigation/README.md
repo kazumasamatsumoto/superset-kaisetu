@@ -56,6 +56,19 @@
 - 実装されない理由の分析
 - コミュニティ貢献の道筋
 
+### 6. DATE_FORMAT_ORIGINAL_REPORT.md
+**内容**: Mixed Chart 日時変換不具合の初回調査レポート（2026-04-01）
+**主なトピック**:
+- Query Aが空の場合にX軸がタイムスタンプ数値で表示される問題
+- transformProps.ts:235-236行目の実装ミス
+- お客様向け説明サマリー
+- 次のアクション提案
+
+**注**: このレポートの内容は、より詳細な3つのドキュメントに分割されました：
+- [DATE_FORMAT_BUG_OVERVIEW.md](../../DATE_FORMAT_BUG_OVERVIEW.md) - 概要
+- [DATE_FORMAT_BUG_TECHNICAL.md](../../DATE_FORMAT_BUG_TECHNICAL.md) - 技術詳細
+- [DATE_FORMAT_BUG_FIX_GUIDE.md](../../DATE_FORMAT_BUG_FIX_GUIDE.md) - 修正ガイド
+
 ## 調査の経緯
 
 1. **初回調査**: Mixチャートで日時変換がうまくいかない現象の調査
