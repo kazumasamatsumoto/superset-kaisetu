@@ -2,7 +2,6 @@
 
 **対象**: Apache Superset (superset-kenshou)
 **調査日**: 2026-04-01
-**優先度**: 🔴 高（お客様への説明が必要）
 
 ---
 
@@ -29,6 +28,7 @@ const xAxisDataType = dataTypes?.[xAxisLabel] ?? dataTypes?.[xAxisOrig];
 ```
 
 **問題点**:
+
 - `getColtypesMapping()`は**Query A（`queriesData[0]`）のみ**から型情報を取得
 - Mixed Chartは2つのクエリ（Query A / Query B）を持つが、**Query Bの型情報は使用されていない**
 
@@ -40,7 +40,7 @@ const xAxisDataType = dataTypes?.[xAxisLabel] ?? dataTypes?.[xAxisOrig];
 export const getColtypesMapping = ({
   coltypes = [],
   colnames = [],
-}: Pick<ChartDataResponseResult, 'coltypes' | 'colnames'>): Record<
+}: Pick<ChartDataResponseResult, "coltypes" | "colnames">): Record<
   string,
   GenericDataType
 > =>
@@ -51,6 +51,7 @@ export const getColtypesMapping = ({
 ```
 
 **動作**:
+
 - `colnames`（列名配列）と`coltypes`（型配列）からマッピングを作成
 - **Query Aにデータがない場合**: `colnames`と`coltypes`が空配列 → 戻り値は`{}`（空オブジェクト）
 
@@ -123,6 +124,7 @@ queriesData[1] (Query B) ┘        ↓
 - [x] **既存機能では実現不可能（コードの不具合）**
 
 **理由**:
+
 - この問題はロジックレベルの不具合であり、設定フラグでは解決できない
 - 運用回避策（Query Aにダミーデータを追加）は現実的でない
 
@@ -133,6 +135,7 @@ queriesData[1] (Query B) ┘        ↓
 ### 改修が必要な理由
 
 **コードレベルの根拠**:
+
 - `superset/superset-frontend/plugins/plugin-chart-echarts/src/MixedTimeseries/transformProps.ts:235-236`
 - `xAxisDataType`の判定に使用するデータ型マッピングが、`queriesData[0]`のみから取得されている
 - 既に両クエリをマージした`coltypeMapping`が147-150行目で生成されているが、使用されていない
@@ -152,10 +155,12 @@ const xAxisDataType = dataTypes?.[xAxisLabel] ?? dataTypes?.[xAxisOrig];
 
 ```typescript
 // const dataTypes = getColtypesMapping(queriesData[0]); // 削除
-const xAxisDataType = coltypeMapping?.[xAxisLabel] ?? coltypeMapping?.[xAxisOrig];
+const xAxisDataType =
+  coltypeMapping?.[xAxisLabel] ?? coltypeMapping?.[xAxisOrig];
 ```
 
 **修正理由**:
+
 1. `coltypeMapping`は既に147-150行目で両クエリをマージ済み
 2. 既存変数の再利用のため、ロジック変更リスクが低い
 3. Query A/Bどちらかにデータがあれば型情報を取得できる
@@ -163,10 +168,12 @@ const xAxisDataType = coltypeMapping?.[xAxisLabel] ?? coltypeMapping?.[xAxisOrig
 ### 副作用の検証
 
 **影響を受けるコード**:
+
 - `tooltipFormatter` (476-479行目) - X軸値のツールチップ表示
 - `xAxisFormatter` (480-483行目) - X軸ラベルの表示
 
 **影響範囲の確認**:
+
 - `coltypeMapping`は同じ`getColtypesMapping()`で生成されており、マッピング構造は同一
 - Query A/Bのどちらかに型情報があれば正しく動作する
 - 両方が空の場合は従来通り`undefined`となり、既存の動作を維持
@@ -175,14 +182,17 @@ const xAxisDataType = coltypeMapping?.[xAxisLabel] ?? coltypeMapping?.[xAxisOrig
 ### 代替案の検討
 
 #### 案A: 設定による回避（不採用）
+
 - Query Aに必ずダミーデータを入れる運用ルール
 - ❌ 運用負荷が高く、データの意味が不明確になる
 
 #### 案B: フォーマット関数の拡張（不採用）
+
 - `xAxisFormatter`でタイムスタンプ自動検出を実装
 - ❌ 型情報を無視することになり、他のケースで誤動作のリスク
 
 #### 案C: 本修正（採用）
+
 - 既存の`coltypeMapping`を使用
 - ✅ 最小限の変更、既存ロジックの活用、リスク低
 
@@ -228,6 +238,7 @@ Mixed Chartは内部で2つのクエリ（Query A / Query B）を実行します
 ## 6. 次のアクション提案
 
 ### 短期（即時対応）
+
 1. ✅ **修正の実施**: 上記の2行修正を適用
 2. ✅ **動作検証**: 以下のパターンでテスト
    - Query A空・Query B有
@@ -236,6 +247,7 @@ Mixed Chartは内部で2つのクエリ（Query A / Query B）を実行します
    - 両方空
 
 ### 中期（コミュニティ連携）
+
 3. 🔲 **Apache Supersetコミュニティへの報告**:
    - GitHub Issueとして報告
    - または Pull Request を提出
@@ -243,6 +255,7 @@ Mixed Chartは内部で2つのクエリ（Query A / Query B）を実行します
    - 他のユーザーへの貢献 + 本家取り込みによる保守性向上
 
 ### 長期（ドキュメント化）
+
 4. 🔲 **CLAUDE.md の既知の調査済み領域テーブルに追加**:
    ```markdown
    | Mixed Chart X軸 日時変換（Query A空） | queriesData[0]のみ参照。coltypeMapping使用で解決 | transformProps.ts:235 |
@@ -255,10 +268,12 @@ Mixed Chartは内部で2つのクエリ（Query A / Query B）を実行します
 ### 関連する既知の問題
 
 **CLAUDE.md記載の既知問題**:
+
 - Mixed Chart ゼロ値 tooltip: Issue #4462 未解決（ECharts仕様）
 - Mixed Chart バー幅（年単位データ）: Canvas制約
 
 **本件との関連**:
+
 - 今回の問題はSuperset固有のバグであり、ECharts側の制約ではない
 - 修正によってSuperset側で完全に解決可能
 
@@ -266,15 +281,15 @@ Mixed Chartは内部で2つのクエリ（Query A / Query B）を実行します
 
 ```typescript
 // テストシナリオ
-describe('Mixed Chart X-axis date formatting', () => {
-  it('should format dates when Query A is empty but Query B has data', () => {
+describe("Mixed Chart X-axis date formatting", () => {
+  it("should format dates when Query A is empty but Query B has data", () => {
     const queriesData = [
       { data: [], colnames: [], coltypes: [] }, // Query A empty
       {
         data: [{ __timestamp: 1609459200000, value: 100 }],
-        colnames: ['__timestamp', 'value'],
-        coltypes: [GenericDataType.Temporal, GenericDataType.Numeric]
-      }
+        colnames: ["__timestamp", "value"],
+        coltypes: [GenericDataType.Temporal, GenericDataType.Numeric],
+      },
     ];
     // Expected: xAxisFormatter uses date formatter, not String
   });
