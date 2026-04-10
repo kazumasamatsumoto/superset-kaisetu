@@ -19,6 +19,7 @@ Mixed Chartの以下の問題・疑問について調査：
 4. ツールチップに大量の0が表示される問題
 5. 棒グラフの幅が自動で変わる仕組みとカスタマイズ方法
 6. Y軸Bounds設定時のauto scale問題
+7. Query AとQuery Bの独立性（フィルターの影響範囲）
 
 ---
 
@@ -187,6 +188,32 @@ Mixed Chartの以下の問題・疑問について調査：
 
 ---
 
+### 9. Query AとQuery Bの独立性調査レポート
+**ファイル**: `MIXED_CHART_QUERY_INDEPENDENCE.md`
+
+**質問**: Mixed Chartにおいて、片方のWHERE条件（Filters）はもう一つのチャートに影響を与えるか？
+
+**結論**: ✅ **完全に独立している**
+
+**重要な発見**:
+- ✅ **Query Aの `adhoc_filters` は Query Bに影響を与えない**
+- ✅ **Query Bの `adhoc_filters_b` は Query Aに影響を与えない**
+- ✅ **各クエリは独立したSQL文として実行される**
+
+**内容**:
+- UI設定レベルでの分離（`adhoc_filters` vs `adhoc_filters_b`）
+- FormData分離処理（`removeFormDataSuffix` vs `retainFormDataSuffix`）
+- クエリ構築の独立性（独立した `buildQueryContext` 呼び出し）
+- データ取得の独立性（`queriesData[0]` vs `queriesData[1]`）
+- 検証方法とデバッグTips
+- ベストプラクティスと避けるべき使い方
+
+**対象読者**: Mixed Chartで複数のクエリを設定するユーザー、フィルターの影響範囲を理解したいユーザー
+
+**重要度**: ⭐⭐⭐⭐☆
+
+---
+
 ## 🔍 主要な発見と結論
 
 ### 1. Rich Tooltipと0表示の関係
@@ -274,6 +301,32 @@ max: (value) => Math.min(value.max, 100),
 - データが-10-150 → 軸は0-100（制約適用）
 
 **詳細**: [MIXED_CHART_YAXIS_BOUNDS_AUTOSCALE.md](./MIXED_CHART_YAXIS_BOUNDS_AUTOSCALE.md)
+
+---
+
+### 6. Query AとQuery Bの完全独立性
+
+**発見**: Query AとQuery Bのフィルター（WHERE条件）は完全に独立している
+
+**独立性の保証メカニズム**:
+1. **UI設定**: 異なるコントロール名（`adhoc_filters` vs `adhoc_filters_b`）
+2. **FormData分離**: サフィックスパターンによる完全分離
+3. **クエリ構築**: 独立した `buildQueryContext` 呼び出し
+4. **SQL生成**: 完全に別のSQL文
+5. **データ取得**: 独立したクエリ結果（`queriesData[0]` vs `queriesData[1]`）
+
+**影響範囲**:
+- Query Aの `adhoc_filters` → Query Aにのみ影響
+- Query Bの `adhoc_filters_b` → Query Bにのみ影響
+- 交差影響なし
+
+**実用的な意味**:
+- ✅ 完全に異なる期間のデータを比較可能
+- ✅ 完全に異なるカテゴリーを比較可能
+- ✅ 複雑な条件を独立して設定可能
+- ❌ 一方のクエリ結果を他方の条件に使用不可（クエリは並行実行）
+
+**詳細**: [MIXED_CHART_QUERY_INDEPENDENCE.md](./MIXED_CHART_QUERY_INDEPENDENCE.md)
 
 ---
 
@@ -385,6 +438,9 @@ ECharts描画
 10. ✅ Y軸Boundsとauto scaleの競合問題を特定
 11. ✅ **重要な発見**: 固定値のmin/maxは`scale: true`を無効化する
 12. ✅ EChartsの関数コールバックで制約付きauto scaleを実現
+13. ✅ Query AとQuery Bの独立性を検証
+14. ✅ **重要な発見**: フィルターは完全に独立、交差影響なし
+15. ✅ サフィックスパターンによる完全分離メカニズムを解明
 
 ### 今後のアクション
 
